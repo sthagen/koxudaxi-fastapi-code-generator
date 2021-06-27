@@ -240,6 +240,13 @@ class Operation(CachedPropertyModel):
 
         if self.request:
             arguments.append(self.request)
+
+        positional_argument: bool = False
+        for argument in arguments:
+            if positional_argument and argument.required and argument.default is None:
+                argument.default = UsefulStr('...')
+            positional_argument = argument.required
+
         return arguments
 
     def get_data_type(self, schema: JsonSchemaObject, suffix: str = '') -> DataType:
@@ -275,7 +282,7 @@ class Operation(CachedPropertyModel):
         return self.openapi_model_parser.get_data_type(schema)
 
     def get_parameter_type(
-        self, parameter: Dict[str, Union[str, Dict[str, str]]], snake_case: bool
+        self, parameter: Dict[str, Union[str, Dict[str, Any]]], snake_case: bool
     ) -> Argument:
         ref: Optional[str] = parameter.get('$ref')  # type: ignore
         if ref:
@@ -284,7 +291,18 @@ class Operation(CachedPropertyModel):
         orig_name = name
         if snake_case:
             name = stringcase.snakecase(name)
-        schema: JsonSchemaObject = JsonSchemaObject.parse_obj(parameter["schema"])
+        content = parameter.get('content')
+        schema: Optional[JsonSchemaObject] = None
+        if content and isinstance(content, dict):
+            content_schema = [
+                c.get("schema")
+                for c in content.values()
+                if isinstance(c.get("schema"), dict)
+            ]
+            if content_schema:
+                schema = JsonSchemaObject.parse_obj(content_schema[0])
+        if not schema:
+            schema = JsonSchemaObject.parse_obj(parameter["schema"])
 
         field = DataModelField(
             name=name,
@@ -293,12 +311,21 @@ class Operation(CachedPropertyModel):
         )
         self.imports.extend(field.imports)
         if orig_name != name:
-            default: Optional[
-                str
-            ] = f"Query({'...' if field.required else repr(schema.default)}, alias='{orig_name}')"
-            self.imports.append(Import(from_='fastapi', import_='Query'))
+            has_in = parameter.get('in')
+            if has_in and isinstance(has_in, str):
+                param_is = has_in.lower().capitalize()
+                self.imports.append(Import(from_='fastapi', import_=param_is))
+                default: Optional[
+                    str
+                ] = f"{param_is}({'...' if field.required else repr(schema.default)}, alias='{orig_name}')"
+            else:
+                # https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#parameterObject
+                # the spec says 'in' is a str type
+                raise TypeError(
+                    f'Issue processing parameter for "in", expected a str, but got something else: {str(parameter)}'
+                )
         else:
-            default = repr(schema.default) if 'default' in parameter["schema"] else None
+            default = repr(schema.default) if schema.has_default else None
         return Argument(
             name=field.name,
             type_hint=field.type_hint,
