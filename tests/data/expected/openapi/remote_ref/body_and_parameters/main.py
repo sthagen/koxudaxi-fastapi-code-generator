@@ -4,17 +4,18 @@
 
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from fastapi import FastAPI, Path, Query
 
-from .models import Pet, PetForm
+from .models import Error, Pet, PetForm
 
 app = FastAPI(
     version='1.0.0',
     title='Swagger Petstore',
     license={'name': 'MIT'},
     description='This description is for testing\nmulti-line\ndescription\n',
+    servers=[{'url': 'http://petstore.swagger.io/v1'}],
 )
 
 
@@ -23,8 +24,8 @@ def get_foo(foo: Optional[str] = None) -> str:
     pass
 
 
-@app.post('/food', response_model=None)
-def post_food(body: str) -> None:
+@app.post('/food', response_model=None, responses={'default': {'model': str}})
+def post_food(body: str) -> Union[None, str]:
     """
     Create a food
     """
@@ -41,38 +42,38 @@ def show_food_by_id(
     pass
 
 
-@app.get('/pets', response_model=List[Pet])
+@app.get('/pets', response_model=List[Pet], responses={'default': {'model': Error}})
 def list_pets(
     limit: Optional[int] = 0,
     home_address: Optional[str] = Query('Unknown', alias='HomeAddress'),
     kind: Optional[str] = 'dog',
-) -> List[Pet]:
+) -> Union[List[Pet], Error]:
     """
     List all pets
     """
     pass
 
 
-@app.post('/pets', response_model=None)
-def post_pets(body: PetForm) -> None:
+@app.post('/pets', response_model=None, responses={'default': {'model': Error}})
+def post_pets(body: PetForm) -> Union[None, Error]:
     """
     Create a pet
     """
     pass
 
 
-@app.get('/pets/{pet_id}', response_model=Pet)
-def show_pet_by_id(pet_id: str = Path(..., alias='petId')) -> Pet:
+@app.get('/pets/{pet_id}', response_model=Pet, responses={'default': {'model': Error}})
+def show_pet_by_id(pet_id: str = Path(..., alias='petId')) -> Union[Pet, Error]:
     """
     Info for a specific pet
     """
     pass
 
 
-@app.put('/pets/{pet_id}', response_model=None)
+@app.put('/pets/{pet_id}', response_model=None, responses={'default': {'model': Error}})
 def put_pets_pet_id(
     pet_id: str = Path(..., alias='petId'), body: PetForm = None
-) -> None:
+) -> Union[None, Error]:
     """
     update a pet
     """
