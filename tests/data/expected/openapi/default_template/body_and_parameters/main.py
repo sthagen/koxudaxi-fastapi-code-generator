@@ -7,7 +7,6 @@ from __future__ import annotations
 from typing import List, Optional, Union
 
 from fastapi import FastAPI, Path, Query, Request
-from starlette.requests import Request
 
 from .models import (
     Error,
@@ -63,7 +62,7 @@ def post_food(body: str) -> Optional[str]:
 
 @app.get('/food/{food_id}', response_model=List[int], tags=['foods'])
 def show_food_by_id(
-    food_id: str, message_texts: Optional[List[str]] = None
+    food_id: str, message_texts: Optional[List[str]] = Query(None)
 ) -> List[int]:
     """
     Info for a specific pet

@@ -25,13 +25,14 @@ from datamodel_code_generator import (
     DefaultPutDict,
     LiteralType,
     OpenAPIScope,
-    PythonVersion,
     snooper_to_methods,
 )
+from datamodel_code_generator.enums import StrictTypes
+from datamodel_code_generator.format import PythonVersion
 from datamodel_code_generator.imports import Import, Imports
 from datamodel_code_generator.model import DataModel, DataModelFieldBase
-from datamodel_code_generator.model import pydantic as pydantic_model
-from datamodel_code_generator.model.pydantic import CustomRootType, DataModelField
+from datamodel_code_generator.model import pydantic_v2 as pydantic_model
+from datamodel_code_generator.model.pydantic_v2 import DataModelField
 from datamodel_code_generator.parser.jsonschema import JsonSchemaObject
 from datamodel_code_generator.parser.openapi import MediaObject
 from datamodel_code_generator.parser.openapi import OpenAPIParser as OpenAPIModelParser
@@ -42,16 +43,16 @@ from datamodel_code_generator.parser.openapi import (
     RequestBodyObject,
     ResponseObject,
 )
-from datamodel_code_generator.types import DataType, DataTypeManager, StrictTypes
-from pydantic import BaseModel, ValidationInfo
+from datamodel_code_generator.types import DataType, DataTypeManager
+from pydantic import BaseModel, ConfigDict, ValidationInfo
 
 RE_APPLICATION_JSON_PATTERN: Pattern[str] = re.compile(r'^application/.*json$')
 
 
 class CachedPropertyModel(BaseModel):
-    class Config:
-        arbitrary_types_allowed = True
-        keep_untouched = (cached_property,)
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True, ignored_types=(cached_property,)
+    )
 
 
 class Response(BaseModel):
@@ -100,36 +101,34 @@ class Argument(CachedPropertyModel):
         return self.argument
 
     @property
-    def argument(self) -> str:  # pragma: no cover
+    def resolved_type_hint(self) -> UsefulStr:
         if self.field is None:
-            type_hint = self.type_hint
-        else:
-            type_hint = (
-                UsefulStr(self.field.type_hint)
-                if not isinstance(self.field, list)
-                else UsefulStr(
-                    f"Union[{', '.join(field.type_hint for field in self.field)}]"
-                )
+            return self.type_hint
+        return (
+            UsefulStr(self.field.type_hint)
+            if not isinstance(self.field, list)
+            else UsefulStr(
+                f"Union[{', '.join(field.type_hint for field in self.field)}]"
             )
+        )
+
+    @property
+    def argument(self) -> str:  # pragma: no cover
+        type_hint = self.resolved_type_hint
         if self.default is None and self.required:
             return f'{self.name}: {type_hint}'
         return f'{self.name}: {type_hint} = {self.default}'
 
     @property
     def snakecase(self) -> str:
-        if self.field is None:
-            type_hint = self.type_hint
-        else:
-            type_hint = (
-                UsefulStr(self.field.type_hint)
-                if not isinstance(self.field, list)
-                else UsefulStr(
-                    f"Union[{', '.join(field.type_hint for field in self.field)}]"
-                )
-            )
+        type_hint = self.resolved_type_hint
         if self.default is None and self.required:
             return f'{stringcase.snakecase(self.name)}: {type_hint}'
         return f'{stringcase.snakecase(self.name)}: {type_hint} = {self.default}'
+
+    @property
+    def plain_parameter(self) -> str:
+        return self.snakecase
 
 
 class Operation(CachedPropertyModel):
@@ -190,20 +189,34 @@ class Operation(CachedPropertyModel):
         """
         return self.method
 
+    @cached_property
+    def _merged_arguments(self) -> List[Argument]:
+        return Operation.merge_arguments_with_union(self.arguments_list)
+
     @property
     def arguments(self) -> str:  # pragma: no cover
-        sorted_arguments = Operation.merge_arguments_with_union(self.arguments_list)
-        return ", ".join(argument.argument for argument in sorted_arguments)
+        return ", ".join(argument.argument for argument in self._merged_arguments)
 
     @property
     def snake_case_arguments(self) -> str:
-        sorted_arguments = Operation.merge_arguments_with_union(self.arguments_list)
-        return ", ".join(argument.snakecase for argument in sorted_arguments)
+        return ", ".join(argument.snakecase for argument in self._merged_arguments)
+
+    @property
+    def plain_arguments(self) -> str:
+        return ", ".join(
+            stringcase.snakecase(argument.name) for argument in self._merged_arguments
+        )
+
+    @property
+    def plain_parameters(self) -> str:
+        return ", ".join(
+            argument.plain_parameter for argument in self._merged_arguments
+        )
 
     @property
     def imports(self) -> Imports:
         imports = Imports()
-        for argument in Operation.merge_arguments_with_union(self.arguments_list):
+        for argument in self._merged_arguments:
             if isinstance(argument.field, list):
                 for field in argument.field:
                     imports.append(field.data_type.import_)
@@ -239,7 +252,7 @@ class OpenAPIParser(OpenAPIModelParser):
         source: Union[str, pathlib.Path, List[pathlib.Path], ParseResult],
         *,
         data_model_type: Type[DataModel] = pydantic_model.BaseModel,
-        data_model_root_type: Type[DataModel] = pydantic_model.CustomRootType,
+        data_model_root_type: Type[DataModel] = pydantic_model.RootModel,
         data_type_manager_type: Type[DataTypeManager] = pydantic_model.DataTypeManager,
         data_model_field_type: Type[DataModelFieldBase] = pydantic_model.DataModelField,
         base_class: Optional[str] = None,
@@ -273,6 +286,8 @@ class OpenAPIParser(OpenAPIModelParser):
         custom_class_name_generator: Optional[Callable[[str], str]] = None,
         field_extra_keys: Optional[Set[str]] = None,
         field_include_all_keys: bool = False,
+        include_request_argument: bool = False,
+        use_annotated: bool = False,
     ):
         super().__init__(
             source=source,
@@ -286,7 +301,9 @@ class OpenAPIParser(OpenAPIModelParser):
             target_python_version=target_python_version,
             dump_resolve_reference_action=dump_resolve_reference_action,
             validation=validation,
-            field_constraints=field_constraints,
+            # use_annotated intentionally enables field_constraints so
+            # datamodel-code-generator renders constraints via Annotated.
+            field_constraints=field_constraints or use_annotated,
             snake_case_field=snake_case_field,
             strip_default_none=strip_default_none,
             aliases=aliases,
@@ -312,11 +329,13 @@ class OpenAPIParser(OpenAPIModelParser):
             field_extra_keys=field_extra_keys,
             field_include_all_keys=field_include_all_keys,
             openapi_scopes=[OpenAPIScope.Schemas, OpenAPIScope.Paths],
+            use_annotated=use_annotated,
         )
         self.operations: Dict[str, Operation] = {}
         self._temporary_operation: Dict[str, Any] = {}
         self.imports_for_fastapi: Imports = Imports()
         self.data_types: List[DataType] = []
+        self.include_request_argument = include_request_argument
 
     def parse_info(self) -> Optional[Dict[str, Any]]:
         if not isinstance(self.raw_obj, dict):  # pragma: no cover
@@ -376,20 +395,28 @@ class OpenAPIParser(OpenAPIModelParser):
         if schema is None:
             raise RuntimeError("schema is None")  # pragma: no cover
 
+        parameter_location = parameters.in_
         field = DataModelField(
             name=name,
             data_type=data_type,
-            required=parameters.required or parameters.in_ == ParameterLocation.path,
+            required=parameters.required
+            or parameter_location == ParameterLocation.path,
         )  # type: ignore[call-arg]
 
-        if orig_name != name:
-            if parameters.in_ is None:
-                raise RuntimeError("parameters.in_ is None")  # pragma: no cover
-            param_is = parameters.in_.value.lower().capitalize()
+        if parameter_location is None and orig_name != name:
+            raise RuntimeError("parameters.in_ is None")  # pragma: no cover
+
+        default: Optional[str]
+        if parameter_location == ParameterLocation.query and schema.is_array:
+            self.imports_for_fastapi.append(Import(from_='fastapi', import_='Query'))
+            default_value = '...' if field.required else repr(schema.default)
+            alias = f", alias={orig_name!r}" if orig_name != name else ''
+            default = f"Query({default_value}{alias})"
+        elif orig_name != name:
+            assert parameter_location is not None  # pragma: no cover
+            param_is = parameter_location.value.lower().capitalize()
             self.imports_for_fastapi.append(Import(from_='fastapi', import_=param_is))
-            default: Optional[str] = (
-                f"{param_is}({'...' if field.required else repr(schema.default)}, alias='{orig_name}')"
-            )
+            default = f"{param_is}({'...' if field.required else repr(schema.default)}, alias={orig_name!r})"
         else:
             default = repr(schema.default) if schema.has_default else None
         self.imports_for_fastapi.append(field.imports)
@@ -430,6 +457,19 @@ class OpenAPIParser(OpenAPIModelParser):
         request = self._temporary_operation.get('_request')
         if request:
             arguments.append(request)
+
+        if self.include_request_argument and not any(
+            argument.name == "request" for argument in arguments
+        ):
+            arguments.insert(
+                0,
+                Argument(
+                    name='request',  # type: ignore
+                    type_hint='Request',  # type: ignore
+                    required=True,
+                ),
+            )
+            self.imports_for_fastapi.append(Import.from_full_path("fastapi.Request"))
 
         positional_argument: bool = False
         for argument in arguments:
@@ -491,7 +531,7 @@ class OpenAPIParser(OpenAPIModelParser):
                         )
                     )
                     self.imports_for_fastapi.append(
-                        Import.from_full_path('starlette.requests.Request')
+                        Import.from_full_path('fastapi.Request')
                     )
                 elif media_type == 'application/octet-stream':
                     arguments.append(
@@ -629,7 +669,7 @@ class OpenAPIParser(OpenAPIModelParser):
         except RecursionError:  # pragma: no cover
             return data_type
         source = reference.source
-        if not isinstance(source, CustomRootType):
+        if not isinstance(source, self.data_model_root_type):
             return data_type
         data_type.remove_reference()
         data_type = source.fields[0].data_type

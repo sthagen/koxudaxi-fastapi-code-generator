@@ -13,16 +13,20 @@ Options:
   -m, --model-file TEXT
   -t, --template-dir PATH
   --model-template-dir PATH
-  --enum-field-as-literal [all|one]
+  --enum-field-as-literal [all|one|none]
   -r, --generate-routers
   --specify-tags TEXT
   -c, --custom-visitor PATH
   --disable-timestamp
-  -d, --output-model-type [pydantic.BaseModel|pydantic_v2.BaseModel|dataclasses.dataclass|typing.TypedDict|msgspec.Struct]
-                                  [default: pydantic.BaseModel]
-  -p, --python-version [3.9|3.10|3.11|3.12|3.13|3.14]
+  --include-request-argument      Auto-inject a FastAPI Request parameter into
+                                  operations when not present.
+  -d, --output-model-type [pydantic_v2.BaseModel|pydantic_v2.dataclass|dataclasses.dataclass|typing.TypedDict|msgspec.Struct]
+                                  [default: pydantic_v2.BaseModel]
+  -p, --python-version [3.10|3.11|3.12|3.13|3.14]
                                   [default: 3.10]
   -V, --version
+  --use-annotated                 Use typing.Annotated for generated model
+                                  field constraints.
   --install-completion            Install completion for the current shell.
   --show-completion               Show completion for the current shell, to
                                   copy it or customize the installation.
@@ -71,6 +75,14 @@ Render generated files with a custom template directory.
 
 Input schema: `openapi/custom_template_security/custom_security.yaml`
 
+### --include-request-argument
+
+Auto-inject a FastAPI Request argument in generated operation signatures when not present.
+
+`fastapi-codegen --input openapi/default_template/simple.yaml --output app --include-request-argument`
+
+Input schema: `openapi/default_template/simple.yaml`
+
 ### --encoding
 
 Read the input schema using an explicit text encoding.
@@ -110,6 +122,14 @@ Render enum fields as Literal annotations.
 `fastapi-codegen --input openapi/default_template/duplicate_anonymus_parameter.yaml --output app --enum-field-as-literal all`
 
 Input schema: `openapi/default_template/duplicate_anonymus_parameter.yaml`
+
+### --use-annotated
+
+Render model field constraints with typing.Annotated.
+
+`fastapi-codegen --input openapi/default_template/recursion.yaml --output app --use-annotated`
+
+Input schema: `openapi/default_template/recursion.yaml`
 
 ### --model-file
 
