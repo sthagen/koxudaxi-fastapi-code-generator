@@ -60,6 +60,8 @@ Options:
   --specify-tags TEXT
   -c, --custom-visitor PATH
   --disable-timestamp
+  --strict-nullable               Respect explicit OpenAPI nullable flags when
+                                  generating models.
   --include-request-argument      Auto-inject a FastAPI Request parameter into
                                   operations when not present.
   -d, --output-model-type [pydantic_v2.BaseModel|pydantic_v2.dataclass|dataclasses.dataclass|typing.TypedDict|msgspec.Struct]
@@ -69,6 +71,8 @@ Options:
   -V, --version
   --use-annotated                 Use typing.Annotated for generated model
                                   field constraints.
+  --enable-faux-immutability      Generate frozen Pydantic models so instances
+                                  are hashable when their fields are hashable.
   --install-completion            Install completion for the current shell.
   --show-completion               Show completion for the current shell, to
                                   copy it or customize the installation.

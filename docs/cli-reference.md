@@ -18,6 +18,8 @@ Options:
   --specify-tags TEXT
   -c, --custom-visitor PATH
   --disable-timestamp
+  --strict-nullable               Respect explicit OpenAPI nullable flags when
+                                  generating models.
   --include-request-argument      Auto-inject a FastAPI Request parameter into
                                   operations when not present.
   -d, --output-model-type [pydantic_v2.BaseModel|pydantic_v2.dataclass|dataclasses.dataclass|typing.TypedDict|msgspec.Struct]
@@ -27,6 +29,8 @@ Options:
   -V, --version
   --use-annotated                 Use typing.Annotated for generated model
                                   field constraints.
+  --enable-faux-immutability      Generate frozen Pydantic models so instances
+                                  are hashable when their fields are hashable.
   --install-completion            Install completion for the current shell.
   --show-completion               Show completion for the current shell, to
                                   copy it or customize the installation.
@@ -99,6 +103,14 @@ Omit the generated timestamp header from output files.
 
 Input schema: `openapi/disable_timestamp/simple.yaml`
 
+### --strict-nullable
+
+Respect explicit OpenAPI nullable flags when generating models.
+
+`fastapi-codegen --input openapi/default_template/nullable_test.yaml --output app --strict-nullable`
+
+Input schema: `openapi/default_template/nullable_test.yaml`
+
 ### --generate-routers
 
 Generate modular router files from tagged OpenAPI operations.
@@ -109,7 +121,7 @@ Input schema: `openapi/using_routers/using_routers_example.yaml`
 
 ### --specify-tags
 
-Regenerate only the routers matching a comma-separated tag list.
+Generate or regenerate only the routers matching a comma-separated tag list.
 
 `fastapi-codegen --input openapi/using_routers/using_routers_example.yaml --output app --template-dir modular_template --generate-routers --specify-tags Wild Boars, Fat Cats`
 
@@ -130,6 +142,14 @@ Render model field constraints with typing.Annotated.
 `fastapi-codegen --input openapi/default_template/recursion.yaml --output app --use-annotated`
 
 Input schema: `openapi/default_template/recursion.yaml`
+
+### --enable-faux-immutability
+
+Generate frozen Pydantic models so instances are hashable when their fields are hashable.
+
+`fastapi-codegen --input openapi/coverage/faux_immutability.yaml --output app --enable-faux-immutability`
+
+Input schema: `openapi/coverage/faux_immutability.yaml`
 
 ### --model-file
 

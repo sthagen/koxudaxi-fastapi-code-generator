@@ -150,6 +150,11 @@ class GenerateConfig(BaseModel):
         description="Omit timestamp headers from generated files.",
         json_schema_extra=cast(Any, _cli_metadata("--disable-timestamp")),
     )
+    strict_nullable: bool = Field(
+        default=False,
+        description="Respect explicit OpenAPI nullable flags when generating models.",
+        json_schema_extra=cast(Any, _cli_metadata("--strict-nullable")),
+    )
     include_request_argument: bool = Field(
         default=False,
         description=(
@@ -172,6 +177,14 @@ class GenerateConfig(BaseModel):
         default=False,
         description="Use `typing.Annotated` for generated model field constraints.",
         json_schema_extra=cast(Any, _cli_metadata("--use-annotated")),
+    )
+    enable_faux_immutability: bool = Field(
+        default=False,
+        description=(
+            "Generate frozen Pydantic models so hashable field values make model "
+            "instances hashable."
+        ),
+        json_schema_extra=cast(Any, _cli_metadata("--enable-faux-immutability")),
     )
 
 

@@ -59,6 +59,8 @@ Options:
   --specify-tags TEXT
   -c, --custom-visitor PATH
   --disable-timestamp
+  --strict-nullable               Respect explicit OpenAPI nullable flags when
+                                  generating models.
   --include-request-argument      Auto-inject a FastAPI Request parameter into
                                   operations when not present.
   -d, --output-model-type [pydantic_v2.BaseModel|pydantic_v2.dataclass|dataclasses.dataclass|typing.TypedDict|msgspec.Struct]
@@ -68,6 +70,8 @@ Options:
   -V, --version
   --use-annotated                 Use typing.Annotated for generated model
                                   field constraints.
+  --enable-faux-immutability      Generate frozen Pydantic models so instances
+                                  are hashable when their fields are hashable.
   --install-completion            Install completion for the current shell.
   --show-completion               Show completion for the current shell, to
                                   copy it or customize the installation.
@@ -342,6 +346,8 @@ Options:
   --specify-tags TEXT
   -c, --custom-visitor PATH
   --disable-timestamp
+  --strict-nullable               Respect explicit OpenAPI nullable flags when
+                                  generating models.
   --include-request-argument      Auto-inject a FastAPI Request parameter into
                                   operations when not present.
   -d, --output-model-type [pydantic_v2.BaseModel|pydantic_v2.dataclass|dataclasses.dataclass|typing.TypedDict|msgspec.Struct]
@@ -351,6 +357,8 @@ Options:
   -V, --version
   --use-annotated                 Use typing.Annotated for generated model
                                   field constraints.
+  --enable-faux-immutability      Generate frozen Pydantic models so instances
+                                  are hashable when their fields are hashable.
   --install-completion            Install completion for the current shell.
   --show-completion               Show completion for the current shell, to
                                   copy it or customize the installation.
@@ -423,6 +431,14 @@ Omit the generated timestamp header from output files.
 
 Input schema: `openapi/disable_timestamp/simple.yaml`
 
+### --strict-nullable
+
+Respect explicit OpenAPI nullable flags when generating models.
+
+`fastapi-codegen --input openapi/default_template/nullable_test.yaml --output app --strict-nullable`
+
+Input schema: `openapi/default_template/nullable_test.yaml`
+
 ### --generate-routers
 
 Generate modular router files from tagged OpenAPI operations.
@@ -433,7 +449,7 @@ Input schema: `openapi/using_routers/using_routers_example.yaml`
 
 ### --specify-tags
 
-Regenerate only the routers matching a comma-separated tag list.
+Generate or regenerate only the routers matching a comma-separated tag list.
 
 `fastapi-codegen --input openapi/using_routers/using_routers_example.yaml --output app --template-dir modular_template --generate-routers --specify-tags Wild Boars, Fat Cats`
 
@@ -454,6 +470,14 @@ Render model field constraints with typing.Annotated.
 `fastapi-codegen --input openapi/default_template/recursion.yaml --output app --use-annotated`
 
 Input schema: `openapi/default_template/recursion.yaml`
+
+### --enable-faux-immutability
+
+Generate frozen Pydantic models so instances are hashable when their fields are hashable.
+
+`fastapi-codegen --input openapi/coverage/faux_immutability.yaml --output app --enable-faux-immutability`
+
+Input schema: `openapi/coverage/faux_immutability.yaml`
 
 ### --model-file
 
@@ -515,7 +539,7 @@ Run `tox run -e schema-docs` after changing supported inputs or model backends.
 
 | Format | Status | Evidence | Notes |
 |--------|--------|----------|-------|
-| OpenAPI YAML | tested | `tests/data/openapi/**/*.yaml` (23 fixtures) | Primary fixture format exercised under `tests/data/openapi/**/*.yaml`. |
+| OpenAPI YAML | tested | `tests/data/openapi/**/*.yaml` (25 fixtures) | Primary fixture format exercised under `tests/data/openapi/**/*.yaml`. |
 | OpenAPI JSON | tested | `tests/main/test_main.py::test_generate_from_json_input` | Covered by the JSON conversion CLI test in `tests/main/test_main.py`. |
 | Remote HTTP `$ref` targets | tested | `tests/main/test_main.py::test_generate_remote_ref` | Covered by the remote `$ref` generation test against a live HTTP server. |
 
@@ -523,8 +547,8 @@ Run `tox run -e schema-docs` after changing supported inputs or model backends.
 
 | Suite | Fixtures | Example files | Notes |
 |-------|----------|---------------|-------|
-| Default template | 16 | `body_and_parameters.yaml`, `content_in_parameters.yaml`, `content_in_parameters_inline.yaml` | Core single-file generation scenarios exercised by the main CLI tests. |
-| Coverage fixtures | 3 | `callbacks.yaml`, `callbacks_with_operation_id.yaml`, `non_200_responses.yaml` | Focused fixtures for callbacks, non-200 responses, and other regression edges. |
+| Default template | 17 | `body_and_parameters.yaml`, `content_in_parameters.yaml`, `content_in_parameters_inline.yaml` | Core single-file generation scenarios exercised by the main CLI tests. |
+| Coverage fixtures | 4 | `callbacks.yaml`, `callbacks_with_operation_id.yaml`, `faux_immutability.yaml` | Focused fixtures for callbacks, non-200 responses, and other regression edges. |
 | Custom template overrides | 1 | `custom_security.yaml` | Template override coverage for `--template-dir`. |
 | Timestamp suppression | 1 | `simple.yaml` | Fixtures that exercise `--disable-timestamp`. |
 | Remote references | 1 | `body_and_parameters.yaml` | Fixtures whose `$ref` targets are resolved over HTTP at test time. |

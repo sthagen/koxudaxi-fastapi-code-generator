@@ -90,6 +90,11 @@ def main(
         None, "--custom-visitor", "-c"
     ),
     disable_timestamp: bool = typer.Option(False, "--disable-timestamp"),
+    strict_nullable: bool = typer.Option(
+        False,
+        "--strict-nullable",
+        help="Respect explicit OpenAPI nullable flags when generating models.",
+    ),
     include_request_argument: bool = typer.Option(
         False,
         "--include-request-argument",
@@ -116,6 +121,14 @@ def main(
         "--use-annotated",
         help="Use typing.Annotated for generated model field constraints.",
     ),
+    enable_faux_immutability: bool = typer.Option(
+        False,
+        "--enable-faux-immutability",
+        help=(
+            "Generate frozen Pydantic models so instances are hashable when their "
+            "fields are hashable."
+        ),
+    ),
 ) -> None:
     del version
     input_name: str = Path(input_file).name
@@ -137,12 +150,14 @@ def main(
         enum_field_as_literal=enum_field_as_literal or None,
         custom_visitors=custom_visitors,
         disable_timestamp=disable_timestamp,
+        strict_nullable=strict_nullable,
         include_request_argument=include_request_argument,
         generate_routers=generate_routers,
         specify_tags=specify_tags,
         output_model_type=output_model_type,
         python_version=python_version,
         use_annotated=use_annotated,
+        enable_faux_immutability=enable_faux_immutability,
     )
 
 
@@ -176,12 +191,14 @@ def generate_code(
     enum_field_as_literal: Optional[LiteralType] = None,
     custom_visitors: Optional[List[Path]] = None,
     disable_timestamp: bool = False,
+    strict_nullable: bool = False,
     include_request_argument: bool = False,
     generate_routers: Optional[bool] = None,
     specify_tags: Optional[str] = None,
     output_model_type: DataModelType = DataModelType.PydanticV2BaseModel,
     python_version: PythonVersion = PythonVersion.PY_310,
     use_annotated: bool = False,
+    enable_faux_immutability: bool = False,
 ) -> None:
     global all_tags
     if not model_path:  # pragma: no cover
@@ -209,8 +226,10 @@ def generate_code(
         dump_resolve_reference_action=data_model_types.dump_resolve_reference_action,
         custom_template_dir=model_template_dir,
         target_python_version=python_version,
+        strict_nullable=strict_nullable,
         include_request_argument=include_request_argument,
         use_annotated=use_annotated,
+        enable_faux_immutability=enable_faux_immutability,
     )
 
     with chdir(output_dir):
@@ -268,10 +287,38 @@ def generate_code(
                     all_tags.append(tag)
     # Convert from Tag Names to router_names
     sorted_tags = sorted(set(all_tags), key=lambda x: x.lower())
-    routers = sorted(
-        [re.sub(TITLE_PATTERN, '_', tag.strip()).lower() for tag in sorted_tags]
-    )
-    template_vars = {**template_vars, "routers": routers, "tags": sorted_tags}
+    routers = [re.sub(TITLE_PATTERN, '_', tag.strip()).lower() for tag in sorted_tags]
+    router_tag_pairs = list(zip(routers, sorted_tags, strict=True))
+    specified_tags = set()
+    existing_main_has_router_includes = False
+    if generate_routers and specify_tags:
+        specified_tags = {
+            tag.strip() for tag in str(specify_tags).split(",") if tag.strip()
+        }
+        main_path = output_dir / "main.py"
+        if main_path.exists():
+            existing_main_has_router_includes = (
+                "app.include_router" in main_path.read_text(encoding=encoding)
+            )
+
+    main_router_tag_pairs = router_tag_pairs
+    if specified_tags and not existing_main_has_router_includes:
+        main_router_tag_pairs = [
+            (router, tag) for router, tag in router_tag_pairs if tag in specified_tags
+        ]
+        if not main_router_tag_pairs:
+            available = ", ".join(tag for _, tag in router_tag_pairs) or "<none>"
+            requested = ", ".join(sorted(specified_tags))
+            raise ClickException(
+                f"No routers matched --specify-tags ({requested}). "
+                f"Available tags: {available}"
+            )
+
+    template_vars = {
+        **template_vars,
+        "routers": [router for router, _ in main_router_tag_pairs],
+        "tags": [tag for _, tag in main_router_tag_pairs],
+    }
 
     for target in template_dir.rglob("*"):
         relative_path = target.relative_to(template_dir)
@@ -282,25 +329,20 @@ def generate_code(
         )
 
     if generate_routers:
-        tags = sorted_tags
         results.pop(Path("routers.jinja2"), None)
-        if specify_tags:
-            if Path(output_dir.joinpath("main.py")).exists():
-                with open(Path(output_dir.joinpath("main.py")), 'r') as file:
-                    content = file.read()
-                    if "app.include_router" in content:
-                        tags = sorted(
-                            set(tag.strip() for tag in str(specify_tags).split(","))
-                        )
+        router_pairs = router_tag_pairs
+        if specified_tags and not existing_main_has_router_includes:
+            router_pairs = main_router_tag_pairs
 
         for target in template_dir.rglob("routers.*"):
             relative_path = target.relative_to(template_dir)
-            for router, tag in zip(routers, sorted_tags):
+            for router, tag in router_pairs:
                 if (
                     not Path(output_dir.joinpath("routers", router))
                     .with_suffix(".py")
                     .exists()
-                    or tag in tags
+                    or not specified_tags
+                    or tag in specified_tags
                 ):
                     template_vars["tag"] = tag.strip()
                     template = environment.get_template(str(relative_path))
