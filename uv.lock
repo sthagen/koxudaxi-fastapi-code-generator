@@ -563,7 +563,7 @@ wheels = [
 
 [[package]]
 name = "datamodel-code-generator"
-version = "0.56.1"
+version = "0.59.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "argcomplete" },
@@ -576,9 +576,9 @@ dependencies = [
     { name = "pyyaml" },
     { name = "tomli", marker = "python_full_version < '3.11'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/6f/9c/5379be8daf9ff2fbbb9a7efcf68c037b089e5b76f360c4f9ca730916e2ee/datamodel_code_generator-0.56.1.tar.gz", hash = "sha256:697abd90cc4eb2c65f130be79a83a24746c3f2d0e15e6eb9dbf17b96784449be", size = 840372, upload-time = "2026-04-16T17:09:53.537Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/8d/50/21488efdb515afc04039e19d876ee668d85a5c9590a3a4bb25b27f2b99c0/datamodel_code_generator-0.59.0.tar.gz", hash = "sha256:054e4d5568c27db5a993f6b3e1d34af53bd1f6d1b6c18b7166908b0f3dc04bd4", size = 1098070, upload-time = "2026-05-29T15:47:55.127Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f7/cd/4a4a13f55069d88d8405aa325874b04c1b1dbc830f0d66c0e56cbd16aa12/datamodel_code_generator-0.56.1-py3-none-any.whl", hash = "sha256:cb2adc18a301f1a2cfcd56672037218eeaff0573669861c2b371eefe86753874", size = 256845, upload-time = "2026-04-16T17:09:51.81Z" },
+    { url = "https://files.pythonhosted.org/packages/f6/ef/8e2479e3ba432bb3333d0f01d6bdc520cc7f765ccbfac134b015d806bc2b/datamodel_code_generator-0.59.0-py3-none-any.whl", hash = "sha256:c8c119ab618d24a619d635fef7aa9c96b69e069a4d287c9adfc148ae28368a69", size = 316232, upload-time = "2026-05-29T15:47:53.228Z" },
 ]
 
 [package.optional-dependencies]
@@ -735,7 +735,7 @@ type = [
 [package.metadata]
 requires-dist = [
     { name = "click", specifier = ">=8.1.8,<8.2" },
-    { name = "datamodel-code-generator", extras = ["http"], specifier = ">=0.56.1,<0.57" },
+    { name = "datamodel-code-generator", extras = ["http"], specifier = ">=0.59,<0.60" },
     { name = "jinja2", specifier = ">=2.11.2,<4" },
     { name = "pydantic", specifier = ">=2.12,<3" },
     { name = "pysnooper", specifier = ">=0.4.1,<2" },

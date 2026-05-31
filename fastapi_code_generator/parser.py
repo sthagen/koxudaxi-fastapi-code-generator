@@ -644,22 +644,27 @@ class OpenAPIParser(OpenAPIModelParser):
         )
 
     def _is_object_discriminator_variant(
-        self, schema: JsonSchemaObject, seen_refs: set[str] | None = None
+        self, schema: JsonSchemaObject | bool, seen_refs: set[str] | None = None
     ) -> bool:
+        if not isinstance(schema, JsonSchemaObject):
+            return False
+        schema_obj = schema
         if seen_refs is None:
             seen_refs = set()
-        if schema.ref:
-            if schema.ref in seen_refs:
+        if schema_obj.ref:
+            if schema_obj.ref in seen_refs:
                 return False
-            seen_refs.add(schema.ref)
-            schema = JsonSchemaObject.model_validate(self.get_ref_model(schema.ref))
-        if schema.is_object or schema.properties:
+            seen_refs.add(schema_obj.ref)
+            schema_obj = JsonSchemaObject.model_validate(
+                self.get_ref_model(schema_obj.ref)
+            )
+        if schema_obj.is_object or schema_obj.properties:
             return True
-        if not schema.allOf:
+        if not schema_obj.allOf:
             return False
         return any(
             self._is_object_discriminator_variant(member, seen_refs.copy())
-            for member in schema.allOf
+            for member in schema_obj.allOf
         )
 
     def _get_upload_file_type(
