@@ -579,6 +579,20 @@ def test_generate_router_name_from_hyphenated_tag(output_dir: Path) -> None:
     validate_generated_code(output_dir)
 
 
+def test_generate_router_template_can_use_tag_in_import(output_dir: Path) -> None:
+    run_cli_and_assert(
+        input_path=DATA_PATH / OPEN_API_COVERAGE_DIR_NAME / "router_tag_import.yaml",
+        output_path=output_dir,
+        expected_path=EXPECTED_OPENAPI_PATH / "coverage" / "router_tag_import",
+        extra_args=[
+            "--template-dir",
+            str(DATA_PATH / "custom_template" / "router_tag_import"),
+            "--generate-routers",
+            "--disable-timestamp",
+        ],
+    )
+
+
 def test_generate_router_preserves_path_parameter_name(output_dir: Path) -> None:
     spec = json.dumps(
         {
