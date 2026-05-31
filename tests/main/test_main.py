@@ -264,6 +264,20 @@ def test_generate_from_json_input(tmp_path: Path, output_dir: Path) -> None:
 
 
 @freeze_time("2020-06-19")
+def test_generate_request_body_without_schema(output_dir: Path) -> None:
+    run_cli_and_assert(
+        input_path=DATA_PATH
+        / OPEN_API_COVERAGE_DIR_NAME
+        / "request_body_without_schema.yaml",
+        output_path=output_dir,
+        expected_path=EXPECTED_OPENAPI_PATH
+        / "coverage"
+        / "request_body_without_schema",
+        extra_args=["--disable-timestamp"],
+    )
+
+
+@freeze_time("2020-06-19")
 def test_generate_openai_style_openapi_31_spec(output_dir: Path) -> None:
     run_cli_and_assert(
         input_path=DATA_PATH
