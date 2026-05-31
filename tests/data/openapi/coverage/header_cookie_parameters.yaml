@@ -1,0 +1,32 @@
+openapi: 3.0.0
+info:
+  title: Parameter API
+  version: 1.0.0
+paths:
+  /items/{item_id}:
+    get:
+      operationId: getItem
+      parameters:
+        - name: item_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: trace_id
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: session_id
+          in: cookie
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
