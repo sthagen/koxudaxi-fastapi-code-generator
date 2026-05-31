@@ -317,6 +317,36 @@ paths:
 
 
 @freeze_time("2020-06-19")
+def test_generate_root_endpoint_path(output_dir: Path) -> None:
+    spec = """openapi: 3.0.0
+info:
+  title: Root endpoint
+  version: 1.0.0
+paths:
+  /:
+    get:
+      operationId: GetRoot
+      responses:
+        '200':
+          description: OK
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+"""
+    generate_code("root_endpoint.yaml", spec, "utf-8", output_dir, None)
+
+    generated = (output_dir / "main.py").read_text(encoding="utf-8")
+
+    assert "@app.get('/', response_model=None)" in generated
+    assert "#-datamodel-code-generator-#-root-#-special-#" not in generated
+    validate_generated_code(output_dir)
+
+
+@freeze_time("2020-06-19")
 def test_custom_template_can_use_plain_arguments(
     tmp_path: Path, output_dir: Path
 ) -> None:
