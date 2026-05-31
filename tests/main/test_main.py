@@ -365,6 +365,16 @@ def test_generate_root_endpoint_path(output_dir: Path) -> None:
 
 
 @freeze_time("2020-06-19")
+def test_generate_ignores_info_vendor_extensions(output_dir: Path) -> None:
+    run_cli_and_assert(
+        input_path=DATA_PATH / OPEN_API_COVERAGE_DIR_NAME / "vendor_extensions.yaml",
+        output_path=output_dir,
+        expected_path=EXPECTED_OPENAPI_PATH / "coverage" / "vendor_extensions",
+        extra_args=["--disable-timestamp"],
+    )
+
+
+@freeze_time("2020-06-19")
 def test_custom_template_can_use_plain_arguments(
     tmp_path: Path, output_dir: Path
 ) -> None:
