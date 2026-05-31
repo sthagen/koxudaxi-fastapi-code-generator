@@ -317,6 +317,48 @@ paths:
 
 
 @freeze_time("2020-06-19")
+def test_generate_openapi_30_property_example_as_field_examples(
+    output_dir: Path,
+) -> None:
+    spec = """openapi: 3.0.2
+info:
+  title: Example
+  version: 1.0.0
+paths:
+  /status:
+    get:
+      operationId: getStatus
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+components:
+  schemas:
+    StatusResponse:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+        api_version:
+          description: Indication of the API version implemented at this URL.
+          type: string
+          example: v0.4.2
+"""
+    generate_code("field_example.yaml", spec, "utf-8", output_dir, None)
+
+    models = output_dir.joinpath("models.py").read_text(encoding="utf-8")
+
+    assert "examples=['v0.4.2']" in models
+    assert "example='v0.4.2'" not in models
+    validate_generated_code(output_dir)
+
+
+@freeze_time("2020-06-19")
 def test_custom_template_can_use_plain_arguments(
     tmp_path: Path, output_dir: Path
 ) -> None:
