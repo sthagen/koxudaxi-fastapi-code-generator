@@ -7,7 +7,7 @@ Run `tox run -e schema-docs` after changing supported inputs or model backends.
 
 | Format | Status | Evidence | Notes |
 |--------|--------|----------|-------|
-| OpenAPI YAML | tested | `tests/data/openapi/**/*.yaml` (28 fixtures) | Primary fixture format exercised under `tests/data/openapi/**/*.yaml`. |
+| OpenAPI YAML | tested | `tests/data/openapi/**/*.yaml` (29 fixtures) | Primary fixture format exercised under `tests/data/openapi/**/*.yaml`. |
 | OpenAPI JSON | tested | `tests/main/test_main.py::test_generate_from_json_input` | Covered by the JSON conversion CLI test in `tests/main/test_main.py`. |
 | Remote HTTP `$ref` targets | tested | `tests/main/test_main.py::test_generate_remote_ref` | Covered by the remote `$ref` generation test against a live HTTP server. |
 
