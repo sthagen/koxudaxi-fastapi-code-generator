@@ -1,9 +1,9 @@
 from anymodule import {{ tag.strip() }}
 from fastapi import APIRouter
 
-router = APIRouter()
+router = APIRouter(tags=[{{ tag.strip() }}.__name__])
 
 
-@router.get('/items', tags=['{{ tag }}'])
+@router.get('/items', tags=[{{ tag.strip() }}.__name__])
 def get_items() -> None:
     pass

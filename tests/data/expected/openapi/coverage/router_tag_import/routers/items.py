@@ -4,9 +4,9 @@
 from anymodule import Items
 from fastapi import APIRouter
 
-router = APIRouter()
+router = APIRouter(tags=[Items.__name__])
 
 
-@router.get('/items', tags=['Items'])
+@router.get('/items', tags=[Items.__name__])
 def get_items() -> None:
     pass
