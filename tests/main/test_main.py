@@ -579,6 +579,64 @@ def test_generate_router_name_from_hyphenated_tag(output_dir: Path) -> None:
     validate_generated_code(output_dir)
 
 
+def test_generate_router_keeps_case_insensitive_tag_order(output_dir: Path) -> None:
+    spec = json.dumps(
+        {
+            "openapi": "3.0.0",
+            "info": {"title": "Example", "version": "1.0.0"},
+            "paths": {
+                "/alpha": {
+                    "get": {
+                        "operationId": "getAlpha",
+                        "tags": ["alpha"],
+                        "responses": {"200": {"description": "OK"}},
+                    }
+                },
+                "/url-scraper": {
+                    "get": {
+                        "operationId": "getURLScraper",
+                        "tags": ["URLScraper"],
+                        "responses": {"200": {"description": "OK"}},
+                    }
+                },
+                "/users": {
+                    "get": {
+                        "operationId": "getUsers",
+                        "tags": ["users"],
+                        "responses": {"200": {"description": "OK"}},
+                    }
+                },
+            },
+        }
+    )
+
+    generate_code(
+        "case_insensitive_tags.yaml",
+        spec,
+        "utf-8",
+        output_dir,
+        BUILTIN_MODULAR_TEMPLATE_DIR,
+        disable_timestamp=True,
+        generate_routers=True,
+    )
+
+    main_text = output_dir.joinpath("main.py").read_text(encoding="utf-8")
+    alpha_text = output_dir.joinpath("routers", "alpha.py").read_text(encoding="utf-8")
+    urlscraper_text = output_dir.joinpath("routers", "urlscraper.py").read_text(
+        encoding="utf-8"
+    )
+    users_text = output_dir.joinpath("routers", "users.py").read_text(encoding="utf-8")
+
+    assert "from .routers import alpha, urlscraper, users" in main_text
+    assert "tags=['alpha']" in alpha_text
+    assert "@router.get('/alpha', response_model=None" in alpha_text
+    assert "tags=['URLScraper']" in urlscraper_text
+    assert "@router.get('/url-scraper', response_model=None" in urlscraper_text
+    assert "tags=['users']" in users_text
+    assert "@router.get('/users', response_model=None" in users_text
+    validate_generated_code(output_dir)
+
+
 def test_generate_router_preserves_path_parameter_name(output_dir: Path) -> None:
     spec = json.dumps(
         {
