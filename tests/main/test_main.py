@@ -265,107 +265,14 @@ def test_generate_from_json_input(tmp_path: Path, output_dir: Path) -> None:
 
 @freeze_time("2020-06-19")
 def test_generate_openai_style_openapi_31_spec(output_dir: Path) -> None:
-    spec = """openapi: 3.1.0
-info:
-  title: OpenAI-style API
-  version: 1.0.0
-paths:
-  /chat/completions:
-    post:
-      operationId: createChatCompletion
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateChatCompletionRequest'
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CreateChatCompletionResponse'
-components:
-  schemas:
-    CreateChatCompletionRequest:
-      type: object
-      required:
-        - model
-        - messages
-      properties:
-        model:
-          type: string
-        messages:
-          type: array
-          items:
-            $ref: '#/components/schemas/ChatMessage'
-        metadata:
-          type:
-            - object
-            - 'null'
-          additionalProperties:
-            type: string
-    ChatMessage:
-      type: object
-      required:
-        - role
-        - content
-      properties:
-        role:
-          type: string
-          enum:
-            - system
-            - user
-            - assistant
-        content:
-          oneOf:
-            - type: string
-            - type: array
-              items:
-                $ref: '#/components/schemas/ContentPart'
-    ContentPart:
-      type: object
-      required:
-        - type
-        - text
-      properties:
-        type:
-          const: text
-        text:
-          type: string
-    CreateChatCompletionResponse:
-      type: object
-      required:
-        - id
-        - choices
-      properties:
-        id:
-          type: string
-        choices:
-          type: array
-          items:
-            $ref: '#/components/schemas/ChatCompletionChoice'
-    ChatCompletionChoice:
-      type: object
-      required:
-        - index
-        - message
-      properties:
-        index:
-          type: integer
-        message:
-          $ref: '#/components/schemas/ChatMessage'
-"""
-    generate_code("openai_style.yaml", spec, "utf-8", output_dir, None)
-
-    main = (output_dir / "main.py").read_text(encoding="utf-8")
-    models = (output_dir / "models.py").read_text(encoding="utf-8")
-
-    assert "@app.post('/chat/completions'" in main
-    assert "CreateChatCompletionRequest" in models
-    assert "CreateChatCompletionResponse" in models
-    validate_generated_code(output_dir)
+    run_cli_and_assert(
+        input_path=DATA_PATH
+        / OPEN_API_COVERAGE_DIR_NAME
+        / "openai_style_openapi_31.yaml",
+        output_path=output_dir,
+        expected_path=EXPECTED_OPENAPI_PATH / "coverage" / "openai_style_openapi_31",
+        extra_args=["--disable-timestamp"],
+    )
 
 
 @freeze_time("2020-06-19")
