@@ -264,6 +264,18 @@ def test_generate_from_json_input(tmp_path: Path, output_dir: Path) -> None:
 
 
 @freeze_time("2020-06-19")
+def test_generate_openai_style_openapi_31_spec(output_dir: Path) -> None:
+    run_cli_and_assert(
+        input_path=DATA_PATH
+        / OPEN_API_COVERAGE_DIR_NAME
+        / "openai_style_openapi_31.yaml",
+        output_path=output_dir,
+        expected_path=EXPECTED_OPENAPI_PATH / "coverage" / "openai_style_openapi_31",
+        extra_args=["--disable-timestamp"],
+    )
+
+
+@freeze_time("2020-06-19")
 def test_generate_discriminated_union_with_simple_type(output_dir: Path) -> None:
     run_cli_and_assert(
         input_path=DATA_PATH
@@ -324,6 +336,16 @@ def test_generate_openapi_30_property_example_as_field_examples(
         input_path=DATA_PATH / OPEN_API_COVERAGE_DIR_NAME / "field_examples.yaml",
         output_path=output_dir,
         expected_path=EXPECTED_OPENAPI_PATH / "coverage" / "field_examples",
+        extra_args=["--disable-timestamp"],
+    )
+
+
+@freeze_time("2020-06-19")
+def test_generate_root_endpoint_path(output_dir: Path) -> None:
+    run_cli_and_assert(
+        input_path=DATA_PATH / OPEN_API_COVERAGE_DIR_NAME / "root_endpoint_path.yaml",
+        output_path=output_dir,
+        expected_path=EXPECTED_OPENAPI_PATH / "coverage" / "root_endpoint_path",
         extra_args=["--disable-timestamp"],
     )
 
