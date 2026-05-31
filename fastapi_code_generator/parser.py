@@ -466,6 +466,16 @@ class OpenAPIParser(OpenAPIModelParser):
             default_value = '...' if field.required else repr(schema.default)
             alias = f", alias={orig_name!r}" if orig_name != name else ''
             default = f"Query({default_value}{alias})"
+        elif parameter_location in (ParameterLocation.header, ParameterLocation.cookie):
+            assert parameter_location is not None  # pragma: no cover
+            param_is = parameter_location.value.lower().capitalize()
+            self.imports_for_fastapi.append(Import(from_='fastapi', import_=param_is))
+            default_value = '...' if field.required else repr(schema.default)
+            needs_alias = orig_name != name or (
+                parameter_location == ParameterLocation.header and "_" in orig_name
+            )
+            alias = f", alias={orig_name!r}" if needs_alias else ''
+            default = f"{param_is}({default_value}{alias})"
         elif orig_name != name:
             assert parameter_location is not None  # pragma: no cover
             param_is = parameter_location.value.lower().capitalize()
