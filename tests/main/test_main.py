@@ -347,6 +347,20 @@ paths:
 
 
 @freeze_time("2020-06-19")
+def test_generate_sanitizes_invalid_query_parameter_name(output_dir: Path) -> None:
+    run_cli_and_assert(
+        input_path=DATA_PATH
+        / OPEN_API_COVERAGE_DIR_NAME
+        / "invalid_query_parameter_name.yaml",
+        output_path=output_dir,
+        expected_path=EXPECTED_OPENAPI_PATH
+        / "coverage"
+        / "invalid_query_parameter_name",
+        extra_args=["--disable-timestamp"],
+    )
+
+
+@freeze_time("2020-06-19")
 def test_generate_root_endpoint_path(output_dir: Path) -> None:
     run_cli_and_assert(
         input_path=DATA_PATH / OPEN_API_COVERAGE_DIR_NAME / "root_endpoint_path.yaml",
@@ -619,6 +633,22 @@ def test_generate_router_name_from_hyphenated_tag(output_dir: Path) -> None:
     validate_generated_code(output_dir)
 
 
+def test_generate_router_keeps_case_insensitive_tag_order(output_dir: Path) -> None:
+    run_cli_and_assert(
+        input_path=DATA_PATH
+        / OPEN_API_COVERAGE_DIR_NAME
+        / "router_tag_case_order.yaml",
+        output_path=output_dir,
+        expected_path=EXPECTED_OPENAPI_PATH / "coverage" / "router_tag_case_order",
+        extra_args=[
+            "--template-dir",
+            str(DATA_PATH / "custom_template" / "router_tag_case_order"),
+            "--generate-routers",
+            "--disable-timestamp",
+        ],
+    )
+
+
 def test_generate_router_preserves_path_parameter_name(output_dir: Path) -> None:
     spec = json.dumps(
         {
@@ -807,6 +837,16 @@ def test_generate_non_200_responses(output_dir: Path) -> None:
         input_path=DATA_PATH / OPEN_API_COVERAGE_DIR_NAME / "non_200_responses.yaml",
         output_path=output_dir,
         expected_path=EXPECTED_OPENAPI_PATH / "coverage" / "non_200_responses",
+    )
+
+
+@freeze_time("2020-06-19")
+def test_generate_union_request_body_imports(output_dir: Path) -> None:
+    run_cli_and_assert(
+        input_path=DATA_PATH / OPEN_API_COVERAGE_DIR_NAME / "union_request_body.yaml",
+        output_path=output_dir,
+        expected_path=EXPECTED_OPENAPI_PATH / "coverage" / "union_request_body",
+        extra_args=["--disable-timestamp"],
     )
 
 
