@@ -282,6 +282,20 @@ def test_generate_with_parent_pyproject_formatter_settings(tmp_path: Path) -> No
 
 
 @freeze_time("2020-06-19")
+def test_generate_request_body_without_schema(output_dir: Path) -> None:
+    run_cli_and_assert(
+        input_path=DATA_PATH
+        / OPEN_API_COVERAGE_DIR_NAME
+        / "request_body_without_schema.yaml",
+        output_path=output_dir,
+        expected_path=EXPECTED_OPENAPI_PATH
+        / "coverage"
+        / "request_body_without_schema",
+        extra_args=["--disable-timestamp"],
+    )
+
+
+@freeze_time("2020-06-19")
 def test_generate_openai_style_openapi_31_spec(output_dir: Path) -> None:
     run_cli_and_assert(
         input_path=DATA_PATH
@@ -347,6 +361,18 @@ paths:
 
 
 @freeze_time("2020-06-19")
+def test_generate_openapi_30_property_example_as_field_examples(
+    output_dir: Path,
+) -> None:
+    run_cli_and_assert(
+        input_path=DATA_PATH / OPEN_API_COVERAGE_DIR_NAME / "field_examples.yaml",
+        output_path=output_dir,
+        expected_path=EXPECTED_OPENAPI_PATH / "coverage" / "field_examples",
+        extra_args=["--disable-timestamp"],
+    )
+
+
+@freeze_time("2020-06-19")
 def test_generate_sanitizes_invalid_query_parameter_name(output_dir: Path) -> None:
     run_cli_and_assert(
         input_path=DATA_PATH
@@ -366,6 +392,16 @@ def test_generate_root_endpoint_path(output_dir: Path) -> None:
         input_path=DATA_PATH / OPEN_API_COVERAGE_DIR_NAME / "root_endpoint_path.yaml",
         output_path=output_dir,
         expected_path=EXPECTED_OPENAPI_PATH / "coverage" / "root_endpoint_path",
+        extra_args=["--disable-timestamp"],
+    )
+
+
+@freeze_time("2020-06-19")
+def test_generate_ignores_info_vendor_extensions(output_dir: Path) -> None:
+    run_cli_and_assert(
+        input_path=DATA_PATH / OPEN_API_COVERAGE_DIR_NAME / "vendor_extensions.yaml",
+        output_path=output_dir,
+        expected_path=EXPECTED_OPENAPI_PATH / "coverage" / "vendor_extensions",
         extra_args=["--disable-timestamp"],
     )
 
@@ -633,6 +669,20 @@ def test_generate_router_name_from_hyphenated_tag(output_dir: Path) -> None:
     validate_generated_code(output_dir)
 
 
+def test_generate_router_template_can_use_tag_in_import(output_dir: Path) -> None:
+    run_cli_and_assert(
+        input_path=DATA_PATH / OPEN_API_COVERAGE_DIR_NAME / "router_tag_import.yaml",
+        output_path=output_dir,
+        expected_path=EXPECTED_OPENAPI_PATH / "coverage" / "router_tag_import",
+        extra_args=[
+            "--template-dir",
+            str(DATA_PATH / "custom_template" / "router_tag_import"),
+            "--generate-routers",
+            "--disable-timestamp",
+        ],
+    )
+
+
 def test_generate_router_keeps_case_insensitive_tag_order(output_dir: Path) -> None:
     run_cli_and_assert(
         input_path=DATA_PATH
@@ -837,6 +887,15 @@ def test_generate_non_200_responses(output_dir: Path) -> None:
         input_path=DATA_PATH / OPEN_API_COVERAGE_DIR_NAME / "non_200_responses.yaml",
         output_path=output_dir,
         expected_path=EXPECTED_OPENAPI_PATH / "coverage" / "non_200_responses",
+    )
+
+
+@freeze_time("2020-06-19")
+def test_generate_non_200_success_status_code(output_dir: Path) -> None:
+    run_cli_and_assert(
+        input_path=DATA_PATH / OPEN_API_COVERAGE_DIR_NAME / "non_200_status_code.yaml",
+        output_path=output_dir,
+        expected_path=EXPECTED_OPENAPI_PATH / "coverage" / "non_200_status_code",
     )
 
 

@@ -15,6 +15,6 @@ app = FastAPI(
 )
 
 
-@app.post('/payload', response_model=None)
+@app.post('/payload', response_model=None, status_code=204)
 def create_payload(body: Union[TypeA, TypeB]) -> None:
     pass

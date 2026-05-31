@@ -199,6 +199,7 @@ class Operation(CachedPropertyModel):
     tags: Optional[List[str]] = []
     request: Optional[Argument] = None
     response: str = ''
+    status_code: Optional[int] = None
     additional_responses: Dict[Union[str, int], Dict[str, str]] = {}
     return_type: str = ''
     callbacks: Dict[UsefulStr, List["Operation"]] = {}
@@ -396,7 +397,7 @@ class OpenAPIParser(OpenAPIModelParser):
         info = self.raw_obj.get('info')
         if not isinstance(info, dict):  # pragma: no cover
             return None
-        result = info.copy()
+        result = {key: value for key, value in info.items() if not key.startswith('x-')}
         servers = self.raw_obj.get('servers')
         if servers:
             result['servers'] = servers
@@ -727,6 +728,17 @@ class OpenAPIParser(OpenAPIModelParser):
             data_type = DataType(type='None')
         type_hint = data_type.type_hint  # TODO: change to lazy loading
         self._temporary_operation['response'] = type_hint
+        success_status_codes = [
+            int(status_code)
+            for status_code in responses
+            if str(status_code).isdigit() and 200 <= int(status_code) < 300
+        ]
+        if '200' not in responses and success_status_codes:
+            selected_status_code = min(success_status_codes)
+            if selected_status_code == 204 and not data_types.get(
+                str(selected_status_code)
+            ):
+                self._temporary_operation['status_code'] = selected_status_code
         return_types = {type_hint: data_type}
         for status_code, additional_responses in data_types.items():
             if status_code != '200' and additional_responses:  # 200 is processed above
