@@ -33,6 +33,7 @@ from datamodel_code_generator.imports import Import, Imports
 from datamodel_code_generator.model import DataModel, DataModelFieldBase
 from datamodel_code_generator.model import pydantic_v2 as pydantic_model
 from datamodel_code_generator.model.pydantic_v2 import DataModelField
+from datamodel_code_generator.parser.base import SPECIAL_PATH_FORMAT
 from datamodel_code_generator.parser.jsonschema import JsonSchemaObject
 from datamodel_code_generator.parser.openapi import MediaObject
 from datamodel_code_generator.parser.openapi import OpenAPIParser as OpenAPIModelParser
@@ -51,6 +52,7 @@ RE_SNAKECASE_REPLACE_PATTERN: Pattern[str] = re.compile(r"[\-\.\s]")
 RE_UPPERCASE_PATTERN: Pattern[str] = re.compile(r"[A-Z]")
 RE_CAMELCASE_STRIP_PATTERN: Pattern[str] = re.compile(r"\w[\s\W]+\w")
 RE_CAMELCASE_REPLACE_PATTERN: Pattern[str] = re.compile(r"[\-_\.\s]([a-z])")
+ROOT_PATH_NAME = SPECIAL_PATH_FORMAT.format("root")
 
 
 def _underscore_lowercase(match: Match[str]) -> str:
@@ -753,6 +755,7 @@ class OpenAPIParser(OpenAPIModelParser):
         super().parse_operation(raw_operation, path)
         resolved_path = self.model_resolver.resolve_ref(path)
         path_name, method = path[-2:]
+        operation_path = "/" if path_name == ROOT_PATH_NAME else f"/{path_name}"
 
         self._temporary_operation['arguments_list'] = self.get_argument_list(path=path)
         main_operation = self._temporary_operation
@@ -798,7 +801,7 @@ class OpenAPIParser(OpenAPIModelParser):
             **raw_operation,
             **main_operation,
             callbacks=callbacks,
-            path=f'/{path_name}',  # type: ignore
+            path=operation_path,  # type: ignore
             method=method,  # type: ignore
         )
 

@@ -282,6 +282,18 @@ def test_generate_with_parent_pyproject_formatter_settings(tmp_path: Path) -> No
 
 
 @freeze_time("2020-06-19")
+def test_generate_openai_style_openapi_31_spec(output_dir: Path) -> None:
+    run_cli_and_assert(
+        input_path=DATA_PATH
+        / OPEN_API_COVERAGE_DIR_NAME
+        / "openai_style_openapi_31.yaml",
+        output_path=output_dir,
+        expected_path=EXPECTED_OPENAPI_PATH / "coverage" / "openai_style_openapi_31",
+        extra_args=["--disable-timestamp"],
+    )
+
+
+@freeze_time("2020-06-19")
 def test_generate_discriminated_union_with_simple_type(output_dir: Path) -> None:
     run_cli_and_assert(
         input_path=DATA_PATH
@@ -332,6 +344,16 @@ paths:
     assert "Query(None, alias='message-\"\\\\\\\\texts')" in generated
     assert "Header(None, alias='X-\"\\\\\\\\Token')" in generated
     validate_generated_code(output_dir)
+
+
+@freeze_time("2020-06-19")
+def test_generate_root_endpoint_path(output_dir: Path) -> None:
+    run_cli_and_assert(
+        input_path=DATA_PATH / OPEN_API_COVERAGE_DIR_NAME / "root_endpoint_path.yaml",
+        output_path=output_dir,
+        expected_path=EXPECTED_OPENAPI_PATH / "coverage" / "root_endpoint_path",
+        extra_args=["--disable-timestamp"],
+    )
 
 
 @freeze_time("2020-06-19")
