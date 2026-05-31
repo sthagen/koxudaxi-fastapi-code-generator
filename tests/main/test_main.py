@@ -264,6 +264,33 @@ def test_generate_from_json_input(tmp_path: Path, output_dir: Path) -> None:
 
 
 @freeze_time("2020-06-19")
+def test_generate_request_body_without_schema(output_dir: Path) -> None:
+    spec = """openapi: 3.0.0
+info:
+  title: Request Without Schema API
+  version: 1.0.0
+paths:
+  /upload:
+    post:
+      operationId: createUpload
+      requestBody:
+        required: false
+        content:
+          application/json: {}
+      responses:
+        '204':
+          description: No content
+"""
+    generate_code("request_body_without_schema.yaml", spec, "utf-8", output_dir, None)
+
+    main_text = output_dir.joinpath("main.py").read_text(encoding="utf-8")
+
+    assert "@app.post('/upload', response_model=None" in main_text
+    assert "def create_upload() -> None:" in main_text
+    validate_generated_code(output_dir)
+
+
+@freeze_time("2020-06-19")
 def test_generate_discriminated_union_with_simple_type(output_dir: Path) -> None:
     run_cli_and_assert(
         input_path=DATA_PATH
