@@ -532,7 +532,7 @@ PROMPT_DATA: dict[str, Any] = {
     '\n'
     '| Format | Status | Evidence | Notes |\n'
     '|--------|--------|----------|-------|\n'
-    '| OpenAPI YAML | tested | `tests/data/openapi/**/*.yaml` (28 '
+    '| OpenAPI YAML | tested | `tests/data/openapi/**/*.yaml` (29 '
     'fixtures) | Primary fixture format exercised under '
     '`tests/data/openapi/**/*.yaml`. |\n'
     '| OpenAPI JSON | tested | '
