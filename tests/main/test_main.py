@@ -264,6 +264,65 @@ def test_generate_from_json_input(tmp_path: Path, output_dir: Path) -> None:
 
 
 @freeze_time("2020-06-19")
+def test_generate_with_parent_pyproject_formatter_settings(tmp_path: Path) -> None:
+    project_dir = tmp_path / "project"
+    output_dir = project_dir / "app3"
+    input_path = project_dir / "api.yaml"
+    project_dir.mkdir()
+    project_dir.joinpath("pyproject.toml").write_text(
+        '[tool.poetry]\nname = "openapi-srv"\nversion = "0.1.0"\n',
+        encoding="utf-8",
+    )
+    input_path.write_text(
+        """openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: Swagger Petstore
+paths:
+  /pets:
+    get:
+      operationId: listPets
+      responses:
+        '200':
+          description: A paged array of pets
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pets"
+components:
+  schemas:
+    Pet:
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+    Pets:
+      type: array
+      items:
+        $ref: "#/components/schemas/Pet"
+""",
+        encoding="utf-8",
+    )
+
+    assert (
+        run_main_with_args(["--input", str(input_path), "--output", str(output_dir)])
+        == 0
+    )
+
+    main_text = output_dir.joinpath("main.py").read_text(encoding="utf-8")
+    models_text = output_dir.joinpath("models.py").read_text(encoding="utf-8")
+
+    assert "@app.get('/pets', response_model=List[Pet])" in main_text
+    assert "class Pet(BaseModel):" in models_text
+    validate_generated_code(output_dir)
+
+
+@freeze_time("2020-06-19")
 def test_generate_discriminated_union_with_simple_type(output_dir: Path) -> None:
     run_cli_and_assert(
         input_path=DATA_PATH
