@@ -334,6 +334,8 @@ def generate_code(
 
     for target in template_dir.rglob("*"):
         relative_path = target.relative_to(template_dir)
+        if generate_routers and relative_path.name.startswith("routers."):
+            continue
         template = environment.get_template(str(relative_path))
         result = template.render(template_vars)
         results[relative_path] = _normalize_pydantic_v2_code(
