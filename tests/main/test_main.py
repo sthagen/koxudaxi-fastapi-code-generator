@@ -792,6 +792,16 @@ def test_generate_non_200_responses(output_dir: Path) -> None:
     )
 
 
+@freeze_time("2020-06-19")
+def test_generate_union_request_body_imports(output_dir: Path) -> None:
+    run_cli_and_assert(
+        input_path=DATA_PATH / OPEN_API_COVERAGE_DIR_NAME / "union_request_body.yaml",
+        output_path=output_dir,
+        expected_path=EXPECTED_OPENAPI_PATH / "coverage" / "union_request_body",
+        extra_args=["--disable-timestamp"],
+    )
+
+
 @pytest.mark.cli_doc(
     options=["--enum-field-as-literal"],
     option_description="Render enum fields as Literal annotations.",
