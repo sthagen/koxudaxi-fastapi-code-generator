@@ -317,6 +317,40 @@ paths:
 
 
 @freeze_time("2020-06-19")
+def test_generate_sanitizes_invalid_query_parameter_name(output_dir: Path) -> None:
+    spec = """openapi: 3.0.0
+info:
+  title: Invalid parameter
+  version: 1.0.0
+paths:
+  /pets:
+    get:
+      operationId: listPets
+      parameters:
+        - name: rs:query
+          in: query
+          description: How many items to return at one time
+          required: false
+          schema:
+            type: integer
+            format: int32
+      responses:
+        '200':
+          description: OK
+"""
+    generate_code("invalid_parameter.yaml", spec, "utf-8", output_dir, None)
+
+    generated = (output_dir / "main.py").read_text(encoding="utf-8")
+
+    assert (
+        "def list_pets(rs_query: Optional[int] = Query(None, alias='rs:query'))"
+        in generated
+    )
+    assert "rs:query:" not in generated
+    validate_generated_code(output_dir)
+
+
+@freeze_time("2020-06-19")
 def test_custom_template_can_use_plain_arguments(
     tmp_path: Path, output_dir: Path
 ) -> None:
