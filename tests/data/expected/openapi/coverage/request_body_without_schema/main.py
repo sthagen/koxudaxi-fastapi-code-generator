@@ -11,6 +11,6 @@ app = FastAPI(
 )
 
 
-@app.post('/upload', response_model=None)
+@app.post('/upload', response_model=None, status_code=204)
 def create_upload() -> None:
     pass

@@ -264,6 +264,24 @@ def test_generate_from_json_input(tmp_path: Path, output_dir: Path) -> None:
 
 
 @freeze_time("2020-06-19")
+def test_generate_with_parent_pyproject_formatter_settings(tmp_path: Path) -> None:
+    fixture_dir = DATA_PATH / OPEN_API_COVERAGE_DIR_NAME / "formatter_parent_pyproject"
+    project_dir = tmp_path / "project"
+    output_dir = project_dir / "app3"
+    input_path = project_dir / "api.yaml"
+    project_dir.mkdir()
+    copy2(fixture_dir / "api.yaml", input_path)
+    copy2(fixture_dir / "pyproject.toml", project_dir / "pyproject.toml")
+
+    run_cli_and_assert(
+        input_path=input_path,
+        output_path=output_dir,
+        expected_path=EXPECTED_OPENAPI_PATH / "coverage" / "formatter_parent_pyproject",
+        extra_args=["--disable-timestamp"],
+    )
+
+
+@freeze_time("2020-06-19")
 def test_generate_request_body_without_schema(output_dir: Path) -> None:
     run_cli_and_assert(
         input_path=DATA_PATH
