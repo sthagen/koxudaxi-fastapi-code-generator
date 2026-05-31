@@ -314,3 +314,29 @@ def test_get_field_extras_checks_one_of_and_any_of_variants() -> None:
         },
         {},
     )
+
+
+def test_get_field_extras_removes_discriminator_for_boolean_variant() -> None:
+    parser = OpenAPIParser(
+        "openapi: 3.0.0\ninfo: {title: Test, version: '1.0'}\npaths: {}\n"
+    )
+    assert_field_extras(
+        parser,
+        {
+            "oneOf": [
+                True,
+                {
+                    "type": "object",
+                    "properties": {
+                        "kind": {
+                            "type": "string",
+                        },
+                    },
+                },
+            ],
+            "discriminator": {
+                "propertyName": "kind",
+            },
+        },
+        {},
+    )

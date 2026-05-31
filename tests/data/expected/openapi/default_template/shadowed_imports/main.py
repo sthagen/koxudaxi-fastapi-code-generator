@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from datetime import date as date_aliased
+from datetime import date
 from typing import Optional
 
 from fastapi import FastAPI
@@ -17,5 +17,5 @@ app = FastAPI(
 
 
 @app.get('/actions/', response_model=None)
-def get_actions_(due: Optional[date_aliased] = None) -> None:
+def get_actions_(due: Optional[date] = None) -> None:
     pass
