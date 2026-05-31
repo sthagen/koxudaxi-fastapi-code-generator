@@ -396,7 +396,7 @@ class OpenAPIParser(OpenAPIModelParser):
         info = self.raw_obj.get('info')
         if not isinstance(info, dict):  # pragma: no cover
             return None
-        result = info.copy()
+        result = {key: value for key, value in info.items() if not key.startswith('x-')}
         servers = self.raw_obj.get('servers')
         if servers:
             result['servers'] = servers

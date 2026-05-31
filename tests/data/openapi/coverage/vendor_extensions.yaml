@@ -1,0 +1,8 @@
+openapi: 3.0.0
+info:
+  title: Example
+  version: 1.0.0
+  x-audience: company-internal
+  x-logo:
+    url: https://www.example.com/company-logo.png
+paths: {}
