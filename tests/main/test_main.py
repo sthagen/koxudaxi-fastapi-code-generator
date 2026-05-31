@@ -588,7 +588,7 @@ def test_generate_router_keeps_case_insensitive_tag_order(output_dir: Path) -> N
         expected_path=EXPECTED_OPENAPI_PATH / "coverage" / "router_tag_case_order",
         extra_args=[
             "--template-dir",
-            str(BUILTIN_MODULAR_TEMPLATE_DIR),
+            str(DATA_PATH / "custom_template" / "router_tag_case_order"),
             "--generate-routers",
             "--disable-timestamp",
         ],
