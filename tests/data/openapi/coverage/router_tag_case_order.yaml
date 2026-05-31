@@ -1,0 +1,29 @@
+openapi: 3.0.0
+info:
+  title: Example
+  version: 1.0.0
+paths:
+  /alpha:
+    get:
+      operationId: getAlpha
+      tags:
+        - alpha
+      responses:
+        '200':
+          description: OK
+  /url-scraper:
+    get:
+      operationId: getURLScraper
+      tags:
+        - URLScraper
+      responses:
+        '200':
+          description: OK
+  /users:
+    get:
+      operationId: getUsers
+      tags:
+        - users
+      responses:
+        '200':
+          description: OK

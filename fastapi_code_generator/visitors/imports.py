@@ -1,6 +1,6 @@
 import re
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Iterable
 
 from datamodel_code_generator.imports import Import, Imports
 from datamodel_code_generator.reference import Reference
@@ -12,14 +12,11 @@ from fastapi_code_generator.visitor import Visitor
 IDENTIFIER_PATTERN = re.compile(r'\b[A-Za-z_][A-Za-z0-9_]*\b')
 
 
-def _get_most_of_reference(data_type: DataType) -> Optional[Reference]:
+def _iter_references(data_type: DataType) -> Iterable[Reference]:
     if data_type.reference:
-        return data_type.reference
-    for data_type in data_type.data_types:
-        reference = _get_most_of_reference(data_type)
-        if reference:
-            return reference
-    return None
+        yield data_type.reference
+    for nested_data_type in data_type.data_types:
+        yield from _iter_references(nested_data_type)
 
 
 def _collect_used_names(parser: OpenAPIParser) -> set[str]:
@@ -67,9 +64,10 @@ def get_imports(parser: OpenAPIParser, model_path: Path) -> Dict[str, object]:
 
     imports.update(parser.imports)
     for data_type in parser.data_types:
-        reference = _get_most_of_reference(data_type)
-        if reference:
+        references = tuple(_iter_references(data_type))
+        if references:
             imports.append(data_type.all_imports)
+        for reference in references:
             imports.append(
                 Import.from_full_path(f'.{model_path.stem}.{reference.name}')
             )
