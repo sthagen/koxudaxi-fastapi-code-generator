@@ -837,6 +837,15 @@ def test_generate_non_200_responses(output_dir: Path) -> None:
 
 
 @freeze_time("2020-06-19")
+def test_generate_non_200_success_status_code(output_dir: Path) -> None:
+    run_cli_and_assert(
+        input_path=DATA_PATH / OPEN_API_COVERAGE_DIR_NAME / "non_200_status_code.yaml",
+        output_path=output_dir,
+        expected_path=EXPECTED_OPENAPI_PATH / "coverage" / "non_200_status_code",
+    )
+
+
+@freeze_time("2020-06-19")
 def test_generate_union_request_body_imports(output_dir: Path) -> None:
     run_cli_and_assert(
         input_path=DATA_PATH / OPEN_API_COVERAGE_DIR_NAME / "union_request_body.yaml",
