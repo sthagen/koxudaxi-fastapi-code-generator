@@ -33,6 +33,7 @@ from datamodel_code_generator.imports import Import, Imports
 from datamodel_code_generator.model import DataModel, DataModelFieldBase
 from datamodel_code_generator.model import pydantic_v2 as pydantic_model
 from datamodel_code_generator.model.pydantic_v2 import DataModelField
+from datamodel_code_generator.parser.base import SPECIAL_PATH_FORMAT
 from datamodel_code_generator.parser.jsonschema import JsonSchemaObject
 from datamodel_code_generator.parser.openapi import MediaObject
 from datamodel_code_generator.parser.openapi import OpenAPIParser as OpenAPIModelParser
@@ -51,6 +52,7 @@ RE_SNAKECASE_REPLACE_PATTERN: Pattern[str] = re.compile(r"[\-\.\s]")
 RE_UPPERCASE_PATTERN: Pattern[str] = re.compile(r"[A-Z]")
 RE_CAMELCASE_STRIP_PATTERN: Pattern[str] = re.compile(r"\w[\s\W]+\w")
 RE_CAMELCASE_REPLACE_PATTERN: Pattern[str] = re.compile(r"[\-_\.\s]([a-z])")
+ROOT_PATH_NAME = SPECIAL_PATH_FORMAT.format("root")
 
 
 def _underscore_lowercase(match: Match[str]) -> str:
@@ -197,6 +199,7 @@ class Operation(CachedPropertyModel):
     tags: Optional[List[str]] = []
     request: Optional[Argument] = None
     response: str = ''
+    status_code: Optional[int] = None
     additional_responses: Dict[Union[str, int], Dict[str, str]] = {}
     return_type: str = ''
     callbacks: Dict[UsefulStr, List["Operation"]] = {}
@@ -394,7 +397,7 @@ class OpenAPIParser(OpenAPIModelParser):
         info = self.raw_obj.get('info')
         if not isinstance(info, dict):  # pragma: no cover
             return None
-        result = info.copy()
+        result = {key: value for key, value in info.items() if not key.startswith('x-')}
         servers = self.raw_obj.get('servers')
         if servers:
             result['servers'] = servers
@@ -463,6 +466,16 @@ class OpenAPIParser(OpenAPIModelParser):
             default_value = '...' if field.required else repr(schema.default)
             alias = f", alias={orig_name!r}" if orig_name != name else ''
             default = f"Query({default_value}{alias})"
+        elif parameter_location in (ParameterLocation.header, ParameterLocation.cookie):
+            assert parameter_location is not None  # pragma: no cover
+            param_is = parameter_location.value.lower().capitalize()
+            self.imports_for_fastapi.append(Import(from_='fastapi', import_=param_is))
+            default_value = '...' if field.required else repr(schema.default)
+            needs_alias = orig_name != name or (
+                parameter_location == ParameterLocation.header and "_" in orig_name
+            )
+            alias = f", alias={orig_name!r}" if needs_alias else ''
+            default = f"{param_is}({default_value}{alias})"
         elif orig_name != name:
             assert parameter_location is not None  # pragma: no cover
             param_is = parameter_location.value.lower().capitalize()
@@ -644,22 +657,27 @@ class OpenAPIParser(OpenAPIModelParser):
         )
 
     def _is_object_discriminator_variant(
-        self, schema: JsonSchemaObject, seen_refs: set[str] | None = None
+        self, schema: JsonSchemaObject | bool, seen_refs: set[str] | None = None
     ) -> bool:
+        if not isinstance(schema, JsonSchemaObject):
+            return False
+        schema_obj = schema
         if seen_refs is None:
             seen_refs = set()
-        if schema.ref:
-            if schema.ref in seen_refs:
+        if schema_obj.ref:
+            if schema_obj.ref in seen_refs:
                 return False
-            seen_refs.add(schema.ref)
-            schema = JsonSchemaObject.model_validate(self.get_ref_model(schema.ref))
-        if schema.is_object or schema.properties:
+            seen_refs.add(schema_obj.ref)
+            schema_obj = JsonSchemaObject.model_validate(
+                self.get_ref_model(schema_obj.ref)
+            )
+        if schema_obj.is_object or schema_obj.properties:
             return True
-        if not schema.allOf:
+        if not schema_obj.allOf:
             return False
         return any(
             self._is_object_discriminator_variant(member, seen_refs.copy())
-            for member in schema.allOf
+            for member in schema_obj.allOf
         )
 
     def _get_upload_file_type(
@@ -720,6 +738,17 @@ class OpenAPIParser(OpenAPIModelParser):
             data_type = DataType(type='None')
         type_hint = data_type.type_hint  # TODO: change to lazy loading
         self._temporary_operation['response'] = type_hint
+        success_status_codes = [
+            int(status_code)
+            for status_code in responses
+            if str(status_code).isdigit() and 200 <= int(status_code) < 300
+        ]
+        if '200' not in responses and success_status_codes:
+            selected_status_code = min(success_status_codes)
+            if selected_status_code == 204 and not data_types.get(
+                str(selected_status_code)
+            ):
+                self._temporary_operation['status_code'] = selected_status_code
         return_types = {type_hint: data_type}
         for status_code, additional_responses in data_types.items():
             if status_code != '200' and additional_responses:  # 200 is processed above
@@ -748,6 +777,7 @@ class OpenAPIParser(OpenAPIModelParser):
         super().parse_operation(raw_operation, path)
         resolved_path = self.model_resolver.resolve_ref(path)
         path_name, method = path[-2:]
+        operation_path = "/" if path_name == ROOT_PATH_NAME else f"/{path_name}"
 
         self._temporary_operation['arguments_list'] = self.get_argument_list(path=path)
         main_operation = self._temporary_operation
@@ -793,7 +823,7 @@ class OpenAPIParser(OpenAPIModelParser):
             **raw_operation,
             **main_operation,
             callbacks=callbacks,
-            path=f'/{path_name}',  # type: ignore
+            path=operation_path,  # type: ignore
             method=method,  # type: ignore
         )
 

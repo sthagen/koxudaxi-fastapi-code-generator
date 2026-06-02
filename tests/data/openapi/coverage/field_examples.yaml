@@ -1,0 +1,28 @@
+openapi: 3.0.2
+info:
+  title: Example
+  version: 1.0.0
+paths:
+  /status:
+    get:
+      operationId: getStatus
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+components:
+  schemas:
+    StatusResponse:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+        api_version:
+          description: Indication of the API version implemented at this URL.
+          type: string
+          example: v0.4.2

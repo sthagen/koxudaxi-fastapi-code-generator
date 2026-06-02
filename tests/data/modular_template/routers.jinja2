@@ -11,6 +11,9 @@ router = APIRouter(
 {% for operation in operations %}
 {% if operation.tags[0] == tag %}
 @router.{{operation.type}}('{{operation.path}}', response_model={{operation.response}}
+    {% if operation.status_code %}
+    , status_code={{operation.status_code}}
+    {% endif %}
     {% if operation.additional_responses %}
         , responses={
             {% for status_code, models in operation.additional_responses.items() %}

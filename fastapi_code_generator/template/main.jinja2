@@ -16,6 +16,9 @@ app = FastAPI(
 
 {% for operation in operations %}
 @app.{{operation.type}}('{{operation.path}}', response_model={{operation.response}}
+    {% if operation.status_code %}
+    , status_code={{operation.status_code}}
+    {% endif %}
     {% if operation.additional_responses %}
         , responses={
             {% for status_code, models in operation.additional_responses.items() %}

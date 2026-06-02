@@ -1,0 +1,15 @@
+openapi: 3.0.0
+info:
+  title: Request Without Schema API
+  version: 1.0.0
+paths:
+  /upload:
+    post:
+      operationId: createUpload
+      requestBody:
+        required: false
+        content:
+          application/json: {}
+      responses:
+        '204':
+          description: No content

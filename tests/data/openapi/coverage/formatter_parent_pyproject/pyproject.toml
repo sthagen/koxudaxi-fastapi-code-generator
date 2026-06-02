@@ -1,0 +1,3 @@
+[tool.poetry]
+name = "openapi-srv"
+version = "0.1.0"
